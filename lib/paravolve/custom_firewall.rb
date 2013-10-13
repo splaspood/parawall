@@ -8,7 +8,7 @@ require "paravolve/custom_firewall/chain"
 require "paravolve/custom_firewall/rule"
 
 module ParaVolve
-  module CustomFirewall
+  module FirewallBuilder
     def self.configure(name, &block)
       fw = Firewall.new(name)
       fw.instance_eval(&block)
@@ -16,7 +16,8 @@ module ParaVolve
     end
     
     def self.setup
-      str  = "# Setup\n"
+			str  = "# Generated: #{Time.now}\n"
+      str += "\n# Setup\n"
 
       str += IPTables.new( type: :IPV4, command: "--flush --table nat" ).to_s
       str += IPTables.new( type: :IPV4, command: "-X --table nat" ).to_s
