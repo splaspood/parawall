@@ -2,13 +2,39 @@ require "pp"
 require "ipaddr"
 require "resolv"
 
-module CustomFirewall
-  def self.configure(name, &block)
-    fw = Firewall.new(name)
-    fw.instance_eval(&block)
-    return fw
+module ParaVolve
+  module CustomFirewall
+    def self.configure(name, &block)
+      fw = Firewall.new(name)
+      fw.instance_eval(&block)
+      return fw
+    end
+    
+    def self.setup
+      str  = "# Setup\n"
+
+      str += "/sbin/iptables -F\n"
+      str += "/sbin/iptables -X\n"
+      str += "/sbin/iptables -F -t nat\n"
+      str += "/sbin/iptables -X -t nat\n"
+      str += "/sbin/ip6tables -F\n"
+      str += "/sbin/ip6tables -X\n"
+
+      str += "/sbin/iptables -P INPUT DROP\n"
+      str += "/sbin/iptables -P OUTPUT ACCEPT\n"
+      str += "/sbin/iptables -P FORWARD DROP\n"
+
+      str += "/sbin/ip6tables -P INPUT DROP\n"
+      str += "/sbin/ip6tables -P OUTPUT ACCEPT\n"
+      str += "/sbin/ip6tables -P FORWARD DROP\n"
+
+      str += "iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o eth0 -j MASQUERADE\n"
+
+      str
+
+  #    setup_logging
+    end
   end
-end
 
 class Firewall
   attr_accessor :name, :tables
@@ -29,6 +55,29 @@ class Firewall
     str += @tables.map { |t| t.to_s }.join("\n")
     str
   end
+
+  private
+
+  def setup_logging
+    c = Chain.new( "LOG_REJECT", "filter" )
+
+    r = Rule.new "logging log", "filter", "LOG_REJECT"
+    r.match('limit')
+    r.limit('1/sec')
+    r.log_prefix('IPT: ')
+    r.log_level(7)
+    r.jump(:LOG)
+    r.type( [ :IPV4, :IPV6 ] )
+    c.rules << r
+
+    r = Rule.new "logging reject", "filter", "LOG_REJECT"
+    r.jump(:REJECT)
+    r.type( [ :IPV4, :IPV6 ] )
+    c.rules << r
+
+    puts c
+  end
+
 end
 
 class Table
@@ -163,16 +212,6 @@ class Rule
     data = [ data ] unless data.is_a?(Array)
     @type = data
   end
-
-  # def in_interface(data=nil)
-  #   data = [ data ] unless data.is_a?(Array)
-  #   @in_interface = data
-  # end
-
-  # def out_interface(data=nil)
-  #   data = [ data ] unless data.is_a?(Array)
-  #   @out_interface = data
-  # end
 
   def destination_port(data=nil)
     data = [ data ] unless data.is_a?(Array)
