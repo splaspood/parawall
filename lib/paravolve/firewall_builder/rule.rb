@@ -22,11 +22,13 @@ module ParaVolve
 			setter :in_interface, :out_interface, :proto, :jump, :match, :limit, :log_prefix, :log_level, :type, :comment
 
 			def initialize(n, table, chain)
-				@name   = n.to_s
-				@jump   = :DROP
-				@chain  = chain
-				@table  = table
-				@source = Array.new
+				@name        = n.to_s
+				@jump        = :DROP
+				@chain       = chain
+				@table       = table
+				@comment     = @name
+
+				@source      = Array.new
 				@destination = Array.new
 			end
 
@@ -115,37 +117,47 @@ module ParaVolve
 
 			private
 
-			def build_command(type, arguments = {})
-				IPTables.new(type: type, command: "--table #{@table} --append #{@chain} " + build_args(arguments) + "--match comment --comment \"#{@name}\"").to_s
+			def build_command(type, args = {})
+        args = args.dup
+
+        cmt = args.delete(:comment)
+
+        cmd  = "--table #{@table} --append #{@chain} " + build_args(args)
+        cmd += "--match comment --comment \"#{cmt}\"" unless cmt == false
+
+				IPTables.new(type: type, command: cmd ).to_s
 			end
 
-			def build_args(arguments = {})
-				args = String.new
+			def build_args(args = {})
+        args = args.dup
+				arg_list = String.new
 
-				arguments.delete(:source)       if arguments[:source] == '0.0.0.0/0'
-				arguments.delete(:destination)  if arguments[:destination] == '0.0.0.0/0'
+				args.delete(:source)       if args[:source] == '0.0.0.0/0'
+				args.delete(:destination)  if args[:destination] == '0.0.0.0/0'
 
-				unless arguments[:source_port].nil?
-					args += "--proto #{arguments[:proto]} --match multiport --source-ports #{arguments[:source_port].join(",")} "
-					arguments.delete(:source_port)
-					arguments.delete(:proto)
+				unless args[:source_port].nil?
+					arg_list += "--proto #{args[:proto]} --match multiport --source-ports #{args[:source_port].join(",")} "
+					args.delete(:source_port)
+					args.delete(:proto)
 				end
 
-				unless arguments[:destination_port].nil?
-					args += "--proto #{arguments[:proto]} --match multiport --destination-ports #{arguments[:destination_port].join(",")} "
-					arguments.delete(:destination_port)
-					arguments.delete(:proto)
+				unless args[:destination_port].nil?
+					arg_list += "--proto #{args[:proto]} --match multiport --destination-ports #{args[:destination_port].join(",")} "
+					args.delete(:destination_port)
+					args.delete(:proto)
 				end
 
-				arguments.keys.select { |a| not arguments[a].nil? }.each do |k|
+				args.keys.select { |a| not args[a].nil? }.each do |k|
 					arg_name = k.to_s.gsub("_","-")
-					args += "--#{arg_name} #{arguments[k]} "
+					arg_list += "--#{arg_name} #{args[k]} "
 				end
 
-				args
+				arg_list
 			end
 
 			def determine_type(src = nil, dest = nil)
+        return @type unless @type.nil?
+
 				unless src.nil? or src == '0.0.0.0/0'
 					ip = IPAddr.new src
 					return ip.ipv4? ? [ :IPV4 ] : [ :IPV6 ]

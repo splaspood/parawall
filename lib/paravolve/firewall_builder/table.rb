@@ -14,6 +14,12 @@ module ParaVolve
 				@chains << c
 			end
 
+      def host_list(name, &block)
+        hl = HostList.new(name, @name)
+        hl.instance_eval(&block)
+        @chains << hl
+      end
+
 			def to_s
 				str  = "\n## Table: #{@name}\n"
 				str += flush
