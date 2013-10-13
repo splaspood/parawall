@@ -1,5 +1,5 @@
 module ParaVolve
-	module CustomFirewall
+	module FirewallBuilder
 		class IPTables
 			attr_accessor :type, :command
 

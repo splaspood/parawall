@@ -1,5 +1,5 @@
 module ParaVolve
-  module CustomFirewall
+  module FirewallBuilder
 		class Table
 			attr_accessor :name, :chains
 

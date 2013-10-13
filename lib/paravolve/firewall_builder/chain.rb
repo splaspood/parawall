@@ -3,7 +3,7 @@ require "ipaddr"
 require "resolv"
 
 module ParaVolve
-  module CustomFirewall
+  module FirewallBuilder
 		class Chain
 			POLICIES = [ :ACCEPT, :DROP ]
 

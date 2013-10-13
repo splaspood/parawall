@@ -1,11 +1,11 @@
 require "ipaddr"
 require "resolv"
 
-require "paravolve/custom_firewall/iptables"
-require "paravolve/custom_firewall/firewall"
-require "paravolve/custom_firewall/table"
-require "paravolve/custom_firewall/chain"
-require "paravolve/custom_firewall/rule"
+require "paravolve/firewall_builder/iptables"
+require "paravolve/firewall_builder/firewall"
+require "paravolve/firewall_builder/table"
+require "paravolve/firewall_builder/chain"
+require "paravolve/firewall_builder/rule"
 
 module ParaVolve
   module FirewallBuilder

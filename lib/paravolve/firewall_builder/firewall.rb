@@ -1,5 +1,5 @@
 module ParaVolve
-  module CustomFirewall
+  module FirewallBuilder
 		class Firewall
 			attr_accessor :name, :tables
 

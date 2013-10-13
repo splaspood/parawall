@@ -3,7 +3,7 @@ require "ipaddr"
 require "resolv"
 
 module ParaVolve
-  module CustomFirewall
+  module FirewallBuilder
 		class Rule
 			def self.setter(*method_names)
 				method_names.each do |name|
