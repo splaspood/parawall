@@ -148,7 +148,7 @@ class Rule
   end
 
   def destination(data=nil)
-    data = [ data ] if data.is_a?(String)
+    data = [ data ] unless data.is_a?(Array)
 
     @destination = data.map do |d|
       unless d.to_s =~ /^[0-9]/
@@ -160,63 +160,62 @@ class Rule
   end
 
   def type(data=nil)
-    data = [ data ] if data.is_a?(Symbol)
+    data = [ data ] unless data.is_a?(Array)
     @type = data
   end
 
+  # def in_interface(data=nil)
+  #   data = [ data ] unless data.is_a?(Array)
+  #   @in_interface = data
+  # end
+
+  # def out_interface(data=nil)
+  #   data = [ data ] unless data.is_a?(Array)
+  #   @out_interface = data
+  # end
+
   def destination_port(data=nil)
-    data = [ data ] if data.is_a?(String) or data.is_a?(Fixnum)
+    data = [ data ] unless data.is_a?(Array)
     @destination_port = data
   end
 
   def source_port(data=nil)
-    data = [ data ] if data.is_a?(String) or data.is_a?(Fixnum)
+    data = [ data ] unless data.is_a?(Array)
     @source_port = data
   end
 
-
   def to_s
-#    unless @destination.empty? and @source.empty?
-      output = String.new
+    output = String.new
 
-      @source << '0.0.0.0/0' if @source.size == 0
-      @destination << '0.0.0.0/0' if @destination.size == 0
+    @source << '0.0.0.0/0' if @source.size == 0
+    @destination << '0.0.0.0/0' if @destination.size == 0
 
-      @source.each do |s|
-        @destination.each do |d|
-          arguments = {
-            in_interface: @in_interface,
-            out_interface: @out_interface, 
-            source: s,
-            source_port: @source_port,
-            destination: d,
-            destination_port: @destination_port,
-            proto: @proto,
-            jump: @jump,
-            match: @match,
-            limit: @limit,
-            log_prefix: @log_prefix,
-            log_level: @log_level,
-            state: @state,
-            comment: @comment
-          }
+    @source.each do |s|
+      @destination.each do |d|
+        arguments = {
+          in_interface:     @in_interface,
+          out_interface:    @out_interface,
+          source:           s,
+          source_port:      @source_port,
+          destination:      d,
+          destination_port: @destination_port,
+          proto:            @proto,
+          jump:             @jump,
+          match:            @match,
+          limit:            @limit,
+          log_prefix:       @log_prefix,
+          log_level:        @log_level,
+          state:            @state,
+          comment:          @comment
+        }
 
-          t = determine_type(s, d)
+        t = determine_type(s, d)
 
-          t.each do |ti|
-            output += build_command(ti, arguments)
-          end
+        t.each do |ti|
+          output += build_command(ti, arguments)
         end
       end
-#    else
-#      @type = determine_type if @type.nil?
-#
-#      output = String.new
-#
-#      @type.each do |t|
-#        output += build_command(t)
-#      end
-#    end
+    end
 
     output
   end
@@ -234,63 +233,29 @@ class Rule
   end
 
   def build_args(arguments = {})
-    # if arguments.empty?
-    #   args = String.new
+    args = String.new
 
-    #   arg_list = [ :in_interface, :out_interface, :source, :source_port, :destination,
-    #     :destination_port, :proto, :jump, :match, :limit, :log_prefix, :log_level, :state, :comment ]
-      
-    #   unless @proto.nil? or not %w{ tcp udp }.include?(@proto)
-    #     args += "--match #{@proto} --proto #{@proto} "
-    #     ##{instance_variable_get("@match")} "
-    #     arg_list.delete(:match)
-    #     arg_list.delete(:proto)
-    #   end
+    arguments.delete(:source)       if arguments[:source] == '0.0.0.0/0'
+    arguments.delete(:destination)  if arguments[:destination] == '0.0.0.0/0'
 
-    #   unless @source_port.nil?
-    #     args += "--match multiport --source-ports #{@source_port.join(",")} "
-    #     arg_list.delete(:source_port)
-    #   end
+    unless arguments[:source_port].nil?
+      args += "--proto #{arguments[:proto]} --match multiport --source-ports #{arguments[:source_port].join(",")} "
+      arguments.delete(:source_port)
+      arguments.delete(:proto)
+    end
 
-    #   unless @destination_port.nil?
-    #     args += "--match multiport --destination-ports #{@destination_port.join(",")} "
-    #     arg_list.delete(:destination_port)
-    #   end
+    unless arguments[:destination_port].nil?
+      args += "--proto #{arguments[:proto]} --match multiport --destination-ports #{arguments[:destination_port].join(",")} "
+      arguments.delete(:destination_port)
+      arguments.delete(:proto)
+    end
 
-    #   arg_list.select { |a| not instance_variable_get( "@#{a.to_s}" ).nil? }.each do |a|
-    #     arg_name = a.to_s.gsub("_","-")
-    #     args += "--#{arg_name} #{instance_variable_get("@#{a.to_s}")} "
-    #   end
+    arguments.keys.select { |a| not arguments[a].nil? }.each do |k|
+      arg_name = k.to_s.gsub("_","-")
+      args += "--#{arg_name} #{arguments[k]} "
+    end
 
-    #   args
-    # else
-      args = String.new
-
-      arguments.delete(:source)       if arguments[:source] == '0.0.0.0/0'
-      arguments.delete(:destination)  if arguments[:destination] == '0.0.0.0/0'
-
-      unless arguments[:source_port].nil?
-        args += "--proto #{arguments[:proto]} --match multiport --source-ports #{arguments[:source_port].join(",")} "
-        arguments.delete(:source_port)
-        arguments.delete(:proto)
-      end
-
-      unless arguments[:destination_port].nil?
-        args += "--proto #{arguments[:proto]} --match multiport --destination-ports #{arguments[:destination_port].join(",")} "
-        arguments.delete(:destination_port)
-        arguments.delete(:proto)
-      end
-
-      arguments.keys.select { |a| not arguments[a].nil? }.each do |k|
-        arg_name = k.to_s.gsub("_","-")
-        args += "--#{arg_name} #{arguments[k]} "
-      end
-
-      puts args
-      pp arguments
-
-      args
-   # end
+    args
   end
 
   def determine_type(src = nil, dest = nil)
@@ -307,17 +272,6 @@ class Rule
     if src == '0.0.0.0/0' and dest == '0.0.0.0/0'
       return [ :IPV4, :IPV6 ]
     end
-
-    # unless @destination.nil?
-    #   puts "here for #{@name} in type #{@destination}"
-    #   ip = IPAddr.new @destination
-    #   return ip.ipv4? ? [ :IPV4 ] : [ :IPV6 ]
-    # end
-
-    # unless @source.nil?
-    #   ip = IPAddr.new @source
-    #   return ip.ipv4? ? [ :IPV4 ] : [ :IPV6 ]
-    # end
 
     return [ :IPV4 ]
   end
