@@ -24,7 +24,8 @@ module ParaVolve
       end
 
 			def to_s
-				str  = flush if @flush
+        str  = String.new
+				str += flush if @flush
 				str += @chains.map { |c| c.to_s }.join("")
 				str
 			end
