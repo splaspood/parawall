@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
 
+$:.unshift File.dirname(__FILE__) + "/lib"
+
+require "paravolve/custom_firewall"
+
 unless File.exists?(ARGV.first)
 	STDERR.puts "usage: #{$0} <definition>"
 	exit(1)
