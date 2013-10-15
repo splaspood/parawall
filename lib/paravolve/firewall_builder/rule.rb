@@ -111,7 +111,7 @@ module ParaVolve
 
 				@source.each do |s|
 					@destination.each do |d|
-						output += IPTables.new( arguments: {
+						output += IPTables.new( type: @type, arguments: {
 							in_interface:     @in_interface,
 							out_interface:    @out_interface,
 							source:           s,
