@@ -1,4 +1,3 @@
-require "pp"
 require "ipaddr"
 require "resolv"
 
@@ -36,7 +35,7 @@ module ParaVolve
 			end
 
 			def to_s
-				str  = ""
+				str = String.new
 
 				unless %w{ INPUT OUTPUT FORWARD PREROUTING POSTROUTING }.include?(@name) or @create == false
 					str += create( @table, @name )
