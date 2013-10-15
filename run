@@ -2,11 +2,35 @@
 
 $:.unshift File.dirname(__FILE__) + "/lib"
 
+require "pp"
+require "thor"
+require 'net/scp'
+require 'tempfile'
 require "paravolve/custom_firewall"
 
-unless File.exists?(ARGV.first)
-	STDERR.puts "usage: #{$0} <definition>"
-	exit(1)
+module ParaVolve
+  module FirewallBuilder
+    class CLI < Thor
+      desc "generate FILENAME", "generate iptables rules for FILENAME"
+      def generate(filename)
+        raise unless File.readable?(filename)
+        fw = ParaVolve::CustomFirewall.configure( filename, { debug: false }, File.read(filename) ) 
+        puts fw
+      end
+
+      desc "upload FILENAME HOST", "upload firewall to HOST:/etc/firewall.sh"
+      def upload(filename, host)
+        raise unless File.readable?(filename)
+        fw = ParaVolve::CustomFirewall.configure( filename, { debug: false }, File.read(filename) ) 
+
+        # compiled_file = Tempfile.new('ruby-firewall')
+        # compiled_file.write(fw)
+        # compiled_file.close
+
+        Net::SCP.upload!(host, "root", StringIO.new(fw.to_s), "/etc/firewall.sh")
+      end
+    end
+  end
 end
- 
-load ARGV.first
+
+ParaVolve::FirewallBuilder::CLI.start(ARGV)
