@@ -1,15 +1,59 @@
-require "pp"
 require "ipaddr"
 require "resolv"
 
 module ParaVolve
   module FirewallBuilder
 		class Rule
-			def self.setter(*method_names)
+      ## Dynamic
+
+      def self.jumpers(*method_names)
+        method_names.each do |name|
+          send :define_method, name do
+            case name
+            when :accept
+              instance_variable_set( '@jump'.to_sym, :ACCEPT )
+            when :drop
+              instance_variable_set( '@jump'.to_sym, :log_and_drop )
+            when :reject
+              instance_variable_set( '@jump'.to_sym, :log_and_reject )
+            end
+          end
+        end
+      end
+
+      def self.csv_value(*method_names)
+        method_names.each do |name|
+          send :define_method, name do |data = nil|
+            if data.nil?
+              instance_variable_get( "@#{name}".to_sym )
+            else
+              data = [data] unless data.is_a?(Array)
+
+              instance_variable_set( "@#{name}".to_sym, data.join(",") )
+            end
+          end
+        end
+      end
+
+      def self.multiple_value(*method_names)
 				method_names.each do |name|
 					send :define_method, name do |data = nil|
 						if data.nil?
-							instance_variable_get "@#{name}"
+							instance_variable_get "@#{name}".to_sym
+						else
+              data = [data] unless data.is_a?(Array)
+
+							instance_variable_set "@#{name}".to_sym, data
+						end
+					end
+				end
+			end
+
+      def self.standard(*method_names)
+				method_names.each do |name|
+					send :define_method, name do |data = nil|
+						if data.nil?
+							instance_variable_get "@#{name}".to_sym
 						else
 							instance_variable_set "@#{name}".to_sym, data
 						end
@@ -17,9 +61,36 @@ module ParaVolve
 				end
 			end
 
-			attr_accessor :name, :chain, :table
+      def self.addresses(*method_names)
+				method_names.each do |name|
+					send :define_method, name do |data = nil|
+            if data.nil?
+              instance_variable_get "@#{name}".to_sym
+            else
+          		data = [data] unless data.is_a?(Array)
 
-			setter :in_interface, :out_interface, :proto, :jump, :match, :limit, :log_prefix, :log_level, :type, :comment, :host_list
+              resolved = data.map do |s|
+					      unless s.to_s =~ /^[0-9]/
+						      Resolv.getaddress s
+					      else
+						      s.to_s
+					      end
+				      end
+
+              instance_variable_set( "@#{name}".to_sym, resolved )
+            end
+					end
+				end
+			end
+
+      attr_accessor :name, :chain, :table
+
+			standard        :in_interface, :out_interface, :proto, :jump, :match, :limit, :log_prefix, :log_level, :comment, :host_list
+      addresses       :source, :destination
+      multiple_value  :type
+      csv_value       :state, :source_port, :destination_port
+      jumpers         :accept, :drop, :reject
+
 
 			def initialize(n, table, chain)
 				@name        = n.to_s
@@ -30,53 +101,6 @@ module ParaVolve
 
 				@source      = Array.new
 				@destination = Array.new
-			end
-
-			def state(data=nil)
-				if data.is_a? Array
-					@state = data.join(",")
-				else
-					@state = data.to_s
-				end
-			end
-
-			def source(data=nil)
-				data = [ data ] unless data.is_a?(Array)
-				
-				@source = data.map do |s|
-					unless s.to_s =~ /^[0-9]/
-						Resolv.getaddress s
-					else
-						s.to_s
-					end
-				end
-			end
-
-			def destination(data=nil)
-				data = [ data ] unless data.is_a?(Array)
-
-				@destination = data.map do |d|
-					unless d.to_s =~ /^[0-9]/
-						Resolv.getaddress d
-					else
-						d.to_s
-					end
-				end
-			end
-
-			def type(data=nil)
-				data = [ data ] unless data.is_a?(Array)
-				@type = data
-			end
-
-			def destination_port(data=nil)
-				data = [ data ] unless data.is_a?(Array)
-				@destination_port = data
-			end
-
-			def source_port(data=nil)
-				data = [ data ] unless data.is_a?(Array)
-				@source_port = data
 			end
 
 			def to_s
@@ -110,6 +134,7 @@ module ParaVolve
 
 				output
 			end
+
 		end
 	end
 end

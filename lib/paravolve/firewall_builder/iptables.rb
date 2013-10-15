@@ -63,9 +63,9 @@ module ParaVolve
 
         [ :source_port, :destination_port ].each do |k|
           if args.has_key?(k)
-            cmd += [ "--proto",         args.delete(:proto)       ]
-            cmd += [ "--match",         "multiport"               ]
-            cmd += [ "--#{k.to_s.gsub("_","-")}s",  args.delete(k).join(",")  ]
+            cmd += [ "--proto",                     args.delete(:proto) ]
+            cmd += [ "--match",                     "multiport"         ]
+            cmd += [ "--#{k.to_s.gsub("_","-")}s",  args.delete(k)      ]
           end
         end
 

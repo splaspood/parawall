@@ -45,25 +45,27 @@ module ParaVolve
 			end
 
 			def setup_logging
-				c = Chain.new( "log_and_reject", @name )
+        [ :REJECT, :DROP ].each do |j|
+          c = Chain.new( "log_and_#{j.to_s.downcase}", @name )
 
-				r = Rule.new "logging log", @name, "log_and_reject"
-				r.match('limit')
-				r.limit('1/sec')
-				r.log_prefix('IPT: ')
-				r.log_level(7)
-				r.jump(:LOG)
-				r.type(@type)
-        r.comment(false)
-				c.rules << r
+          r = Rule.new "#{j.to_s}->LOG", @name, "log_and_#{j.to_s.downcase}"
+          r.match('limit')
+          r.limit('1/sec')
+          r.log_prefix('IPT: ')
+          r.log_level(7)
+          r.jump(:LOG)
+          r.type(@type)
+          r.comment(false)
+          c.rules << r
 
-				r = Rule.new "logging reject", @name, "log_and_reject"
-				r.jump(:REJECT)
-				r.type(@type)
-        r.comment(false)
-				c.rules << r
+          r = Rule.new "#{j.to_s}->LOG", @name, "log_and_#{j.to_s.downcase}"
+          r.jump(j)
+          r.type(@type)
+          r.comment(false)
+          c.rules << r
 
-				@chains << c
+          @chains << c
+        end
 			end
 		end
 	end
