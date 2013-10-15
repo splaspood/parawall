@@ -19,7 +19,7 @@ module ParaVolve
 
 			attr_accessor :name, :chain, :table
 
-			setter :in_interface, :out_interface, :proto, :jump, :match, :limit, :log_prefix, :log_level, :type, :comment
+			setter :in_interface, :out_interface, :proto, :jump, :match, :limit, :log_prefix, :log_level, :type, :comment, :host_list
 
 			def initialize(n, table, chain)
 				@name        = n.to_s
@@ -95,7 +95,7 @@ module ParaVolve
 							destination:      d,
 							destination_port: @destination_port,
 							proto:            @proto,
-							jump:             @jump,
+							jump:             @host_list.nil? ? @jump.to_s : "list-" + @host_list.to_s,
 							match:            @match,
 							limit:            @limit,
 							log_prefix:       @log_prefix,

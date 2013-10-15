@@ -12,7 +12,7 @@ module ParaVolve
         @hosts  = Array.new
         @type   = 'source'
 
-        super "HL_" + name, table, options
+        super "list-" + name, table, options
       end
 
 			def hosts(hl=nil)

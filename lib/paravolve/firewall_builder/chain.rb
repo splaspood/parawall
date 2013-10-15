@@ -36,21 +36,17 @@ module ParaVolve
 			end
 
 			def to_s
-				str  = "\n### Chain: #{@name}\n"
+				str  = ""
 
 				unless %w{ INPUT OUTPUT FORWARD PREROUTING POSTROUTING }.include?(@name) or @create == false
-					str += "#### Creating chain: #{@name}\n"
 					str += create( @table, @name )
         end
        
         if %w{ INPUT OUTPUT FORWARD }.include?(@name) and @set_policy
-					str += "#### Setting default policy to #{@default_policy.to_s}\n"
 					str += set_default_policy( @table, @name, @default_policy.to_s )
 				end
 
-				str += @rules.map { |r|
-					"\n# #{r.name}\n" + r.to_s
-				}.join("\n")
+				str += @rules.map { |r| r.to_s }.join("")
 
 				str
 			end

@@ -21,9 +21,7 @@ module ParaVolve
 			end
 
 			def to_s
-				str = "\n# Firewall: #{@name}\n"
-				str += @tables.map { |t| t.to_s }.join("\n")
-				str
+				@tables.map { |t| t.to_s }.join("")
 			end
 		end
 	end

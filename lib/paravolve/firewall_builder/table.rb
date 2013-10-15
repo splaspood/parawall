@@ -24,15 +24,13 @@ module ParaVolve
       end
 
 			def to_s
-				str  = "\n## Table: #{@name}\n"
-				str += flush if @flush
-				str += @chains.map { |c| c.to_s }.join("\n")
+				str  = flush if @flush
+				str += @chains.map { |c| c.to_s }.join("")
 				str
 			end
 
 			def flush
 				str	 = String.new
-				str += "\n## Flushing table\n"
 
         str += IPTables.new( type: @type, arguments: { table: @name, flush: true } ).to_s
         str += IPTables.new( type: @type, arguments: { table: @name, X: true } ).to_s
@@ -47,9 +45,9 @@ module ParaVolve
 			end
 
 			def setup_logging
-				c = Chain.new( "LOG_REJECT", @name )
+				c = Chain.new( "log_and_reject", @name )
 
-				r = Rule.new "logging log", @name, "LOG_REJECT"
+				r = Rule.new "logging log", @name, "log_and_reject"
 				r.match('limit')
 				r.limit('1/sec')
 				r.log_prefix('IPT: ')
@@ -59,7 +57,7 @@ module ParaVolve
         r.comment(false)
 				c.rules << r
 
-				r = Rule.new "logging reject", @name, "LOG_REJECT"
+				r = Rule.new "logging reject", @name, "log_and_reject"
 				r.jump(:REJECT)
 				r.type(@type)
         r.comment(false)

@@ -5,9 +5,9 @@ module ParaVolve
   module CustomFirewall
     def self.configure(name, options = { debug: false }, block)
       str  = "#!/bin/bash\n"
-      str += "set -x\n" if options.has_key?(:debug) and options[:debug]
-
-			str += "# Generated: #{Time.now}\n"
+      str += "set -x\n\n" if options.has_key?(:debug) and options[:debug]
+      
+      str += "# Generated: #{Time.now}\n"
 
       fw = FirewallBuilder::Firewall.new(name)
       fw.instance_eval(block, name)
