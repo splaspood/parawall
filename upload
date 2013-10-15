@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./run ${1} | ssh root@${2} 'cat > /etc/firewall.sh'

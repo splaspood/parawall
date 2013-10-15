@@ -8,10 +8,15 @@ module ParaVolve
 				@tables = Array.new
 			end
 
-			def table(name, &block)
-				t = Table.new(name)
-				t.setup_logging
-				t.instance_eval(&block)
+			def table(name, options = { logging: true, flush: true, create: true }, &block)
+        options[:flush] = true unless options.has_key?(:flush)
+
+				t = Table.new(name, options)
+
+        t.setup_logging if options.has_key?(:logging) and options[:logging]
+
+        t.instance_eval(&block)
+        
 				@tables << t
 			end
 

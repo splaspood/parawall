@@ -82,12 +82,12 @@ module ParaVolve
 			def to_s
 				output = String.new
 
-				@source << '0.0.0.0/0' if @source.size == 0
+				@source << '0.0.0.0/0'      if @source.size == 0
 				@destination << '0.0.0.0/0' if @destination.size == 0
 
 				@source.each do |s|
 					@destination.each do |d|
-						arguments = {
+						output += IPTables.new( arguments: {
 							in_interface:     @in_interface,
 							out_interface:    @out_interface,
 							source:           s,
@@ -101,78 +101,14 @@ module ParaVolve
 							log_prefix:       @log_prefix,
 							log_level:        @log_level,
 							state:            @state,
-							comment:          @comment
-						}
-
-						t = determine_type(s, d)
-
-						t.each do |ti|
-							output += build_command(ti, arguments)
-						end
+							comment:          @comment,
+              table:            @table,
+              chain:            @chain
+						}).to_s
 					end
 				end
 
 				output
-			end
-
-			private
-
-			def build_command(type, args = {})
-        args = args.dup
-
-        cmt = args.delete(:comment)
-
-        cmd  = "--table #{@table} --append #{@chain} " + build_args(args)
-        cmd += "--match comment --comment \"#{cmt}\"" unless cmt == false
-
-				IPTables.new(type: type, command: cmd ).to_s
-			end
-
-			def build_args(args = {})
-        args = args.dup
-				arg_list = String.new
-
-				args.delete(:source)       if args[:source] == '0.0.0.0/0'
-				args.delete(:destination)  if args[:destination] == '0.0.0.0/0'
-
-				unless args[:source_port].nil?
-					arg_list += "--proto #{args[:proto]} --match multiport --source-ports #{args[:source_port].join(",")} "
-					args.delete(:source_port)
-					args.delete(:proto)
-				end
-
-				unless args[:destination_port].nil?
-					arg_list += "--proto #{args[:proto]} --match multiport --destination-ports #{args[:destination_port].join(",")} "
-					args.delete(:destination_port)
-					args.delete(:proto)
-				end
-
-				args.keys.select { |a| not args[a].nil? }.each do |k|
-					arg_name = k.to_s.gsub("_","-")
-					arg_list += "--#{arg_name} #{args[k]} "
-				end
-
-				arg_list
-			end
-
-			def determine_type(src = nil, dest = nil)
-        return @type unless @type.nil?
-
-				unless src.nil? or src == '0.0.0.0/0'
-					ip = IPAddr.new src
-					return ip.ipv4? ? [ :IPV4 ] : [ :IPV6 ]
-				end
-
-				unless dest.nil? or dest == '0.0.0.0/0'
-					ip = IPAddr.new dest
-					return ip.ipv4? ? [ :IPV4 ]  : [ :IPV6 ]
-				end
-
-				if src == '0.0.0.0/0' and dest == '0.0.0.0/0'
-					return [ :IPV4, :IPV6 ]
-				end
-
-				return [ :IPV4 ]
 			end
 		end
 	end

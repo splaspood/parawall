@@ -1,30 +1,17 @@
 #!/usr/bin/env ruby
 
-$:.unshift File.dirname(__FILE__)
+$:.unshift File.dirname(__FILE__) + "/lib"
 
-require "firewall"
+require "paravolve/custom_firewall"
+STDOUT.sync = true
 
-fw = CustomFirewall.configure "cerberus custom firewall" do
-  table "filter" do
-
-    chain "LOG_REJECT" do
-      [ :IPV4, :IPV6 ].each do |t|
-        rule "logging log" do
-          match       'limit'
-          limit       '1/sec'
-          log_prefix  "IPT: "
-          log_level   7
-          jump      :LOG
-          type        t
-        end
-
-        rule "logging reject" do
-          jump :REJECT
-          type   t
-        end
-      end
+fw = ParaVolve::CustomFirewall.configure "example", { setup: false } do
+  table "filter", { logging: false, flush: false } do
+    host_list "admin_hosts", { set_policy: false, create: false } do
+      hosts %w{ some.hosts.here and.others.like 1.2.3.4 and 2000:1234:100::/64 }
+      type 'source'
     end
-  end
+	end
 end
 
 puts fw

@@ -9,11 +9,14 @@ module ParaVolve
 
 			attr_accessor :name, :rules, :table
 
-			def initialize(name, table)
+			def initialize(name, table, options = { create: true, set_policy: true } )
 				@name           = name.to_s
 				@table          = table.to_s
 				@default_policy = :DROP
 				@rules          = Array.new
+
+        @create       = options[:create]
+        @set_policy   = options[:set_policy]
 			end
 
 			def rule(name, &block)
@@ -35,10 +38,12 @@ module ParaVolve
 			def to_s
 				str  = "\n### Chain: #{@name}\n"
 
-				unless %w{ INPUT OUTPUT FORWARD PREROUTING POSTROUTING }.include?(@name) 
+				unless %w{ INPUT OUTPUT FORWARD PREROUTING POSTROUTING }.include?(@name) or @create == false
 					str += "#### Creating chain: #{@name}\n"
 					str += create( @table, @name )
-				else
+        end
+       
+        if %w{ INPUT OUTPUT FORWARD }.include?(@name) and @set_policy
 					str += "#### Setting default policy to #{@default_policy.to_s}\n"
 					str += set_default_policy( @table, @name, @default_policy.to_s )
 				end
@@ -53,11 +58,11 @@ module ParaVolve
 			private
 
 			def create( table, chain )
-				IPTables.new( type: :BOTH, command: "--table #{table} --new #{chain}" ).to_s
+				IPTables.new( type: :BOTH, arguments: { table: table, new: chain } ).to_s
 			end
 
 			def set_default_policy( table, chain, policy )
-				IPTables.new( type: :BOTH, command: "--table #{table} --policy #{chain} #{policy}" ).to_s
+				IPTables.new( type: :BOTH, arguments: { table: table, policy: "#{chain} #{policy}" } ).to_s
 			end
 		end
 	end

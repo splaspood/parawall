@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+unless File.exists?(ARGV.first)
+	STDERR.puts "usage: #{$0} <definition>"
+	exit(1)
+end
+ 
+load ARGV.first

@@ -3,26 +3,29 @@ module ParaVolve
 		class Table
 			attr_accessor :name, :chains
 
-			def initialize(name = 'filter')
+			def initialize(name = 'filter', options = { flush: true, type: :BOTH } )
 				@name   = name.to_s
 				@chains = Array.new
+
+        @flush  = options[:flush]
+        @type   = options[:type]
 			end
 
-			def chain(name, &block)
-				c = Chain.new(name, @name)
+			def chain(name, options = { create: true }, &block)
+				c = Chain.new(name, @name, options)
 				c.instance_eval(&block)
 				@chains << c
 			end
 
-      def host_list(name, &block)
-        hl = HostList.new(name, @name)
+      def host_list(name, options = { set_policy: true, create: true }, &block)
+        hl = HostList.new(name, @name, options)
         hl.instance_eval(&block)
         @chains << hl
       end
 
 			def to_s
 				str  = "\n## Table: #{@name}\n"
-				str += flush
+				str += flush if @flush
 				str += @chains.map { |c| c.to_s }.join("\n")
 				str
 			end
@@ -31,33 +34,35 @@ module ParaVolve
 				str	 = String.new
 				str += "\n## Flushing table\n"
 
-				[ :IPV4, :IPV6 ].each do |type|
-					str += IPTables.new( type: type, command: "--table #{@name} --flush" ).to_s
-					str += IPTables.new( type: type, command: "--table #{@name} -X" ).to_s
+        str += IPTables.new( type: @type, arguments: { table: @name, flush: true } ).to_s
+        str += IPTables.new( type: @type, arguments: { table: @name, X: true } ).to_s
 
-					str += IPTables.new( type: type, command: "--table #{@name} --policy INPUT DROP" ).to_s
-					str += IPTables.new( type: type, command: "--table #{@name} --policy OUTPUT ACCEPT" ).to_s
-					str += IPTables.new( type: type, command: "--table #{@name} --policy FORWARD DROP" ).to_s
-				end
+        unless @name == 'nat'
+          { INPUT: 'DROP', OUTPUT: 'ACCEPT', FORWARD: 'DROP' }.each_pair do |c, p|
+            str += IPTables.new( type: @type, arguments: { table: @name, policy: "#{c} #{p}" } ).to_s
+          end
+        end
 
 				str
 			end
 
 			def setup_logging
-				c = Chain.new( "LOG_REJECT", "filter" )
+				c = Chain.new( "LOG_REJECT", @name )
 
-				r = Rule.new "logging log", "filter", "LOG_REJECT"
+				r = Rule.new "logging log", @name, "LOG_REJECT"
 				r.match('limit')
 				r.limit('1/sec')
 				r.log_prefix('IPT: ')
 				r.log_level(7)
 				r.jump(:LOG)
-				r.type( [ :IPV4, :IPV6 ] )
+				r.type(@type)
+        r.comment(false)
 				c.rules << r
 
-				r = Rule.new "logging reject", "filter", "LOG_REJECT"
+				r = Rule.new "logging reject", @name, "LOG_REJECT"
 				r.jump(:REJECT)
-				r.type( [ :IPV4, :IPV6 ] )
+				r.type(@type)
+        r.comment(false)
 				c.rules << r
 
 				@chains << c
