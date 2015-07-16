@@ -3,9 +3,9 @@ test:
     - bundle exec bin/pw generate example.rb
   post:
     - gem build ../parawall.gemspec:
-      pwd: artifacts
+        pwd: artifacts
     - fpm -s gem -t deb -v 0.0.1 parawall-0.0.1.gem:
-      pwd: artifacts
+        pwd: artifacts
 dependencies:
   pre:
     - gem install fpm
