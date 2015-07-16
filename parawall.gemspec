@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
-  s.add_dependency 'net-scp', '~> 2.7.0'
+  s.add_dependency 'net-scp', '~> 1.2.1'
   s.add_dependency 'thor', '~> 0.18.1'
   # s.extra_rdoc_files = ['README.md', 'LICENSE']
   s.license = 'GPL'
