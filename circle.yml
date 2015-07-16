@@ -2,22 +2,21 @@ test:
   override:
     - bundle exec bin/pw generate example.rb
   post:
-    - gem build parawall.gemspec
-    - fpm -s gem -t deb -v 0.0.1 parawall-0.0.1.gem
+    - gem build ../parawall.gemspec:
+      pwd: artifacts
+    - fpm -s gem -t deb -v 0.0.1 parawall-0.0.1.gem:
+      pwd: artifacts
 dependencies:
   pre:
     - gem install fpm
     - gem install package_cloud
+    - mkdir artifacts
 general:
   artifacts:
-    - "parawall-0.0.1.gem"
-    - "rubygem-parawall_0.0.1_all.deb"
+    - artifacts
 deployment:
   production:
     branch: master
     commands:
-      - package_cloud push splaspood/projects parawall-0.0.1.gem
-      - package_cloud push splaspood/projects/ubuntu/trusty rubygem-parawall_0.0.1_all.deb
-machine:
-  environment:
-    PROJECT_VERSION: "$(grep 's\.version' parawall.gemspec | cut -f2 -d= | tr -d " '")"
+      - package_cloud push splaspood/projects artifacts/*.gem
+      - package_cloud push splaspood/projects/ubuntu/trusty artifacts/*.deb
