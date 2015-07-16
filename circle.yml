@@ -1,3 +1,6 @@
 test:
   override:
     - bundle exec bin/pw generate example.rb
+dependencies:
+  override:
+    - gem install fpm
