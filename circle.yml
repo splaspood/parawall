@@ -7,7 +7,14 @@ test:
 dependencies:
   pre:
     - gem install fpm
+    - gem install package_cloud
 general:
   artifacts:
     - "parawall-0.0.1.gem"
     - "rubygem-parawall_0.0.1_all.deb"
+deployment:
+  production:
+    branch: master
+    commands:
+      - package_cloud push splaspood/projects parawall-0.0.1.gem
+      - package_cloud push splaspood/projects/ubuntu/trusty rubygem-parawall_0.0.1_all.deb
